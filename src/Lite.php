@@ -24,6 +24,7 @@ class Lite extends RedisCache
 {
 
     private $db_old;
+    private $dbname_old;
 
     /**
      * 重载方法，统一切换DB
@@ -471,6 +472,7 @@ class Lite extends RedisCache
         } else {
             $db = isset($arr[$name]) ? $arr[$name] : 0;
         }
+        $this->dbname = $name;
         if ($this->db_old != $db) {
             $this->redis->select($db);
             $this->db_old = $db;
@@ -479,24 +481,42 @@ class Lite extends RedisCache
 
     //-------------------------------------------------------重写父类方法------------------------------------------------
 
+    protected function formatKey($key)
+    {
+        $arr    = \PhalApi\DI()->config->get('app.redis.prefix');
+        $prefix = isset($arr[$name]) ? $arr[$name] : $this->prefix;
+        return $prefix . $key;
+    }
+
     protected function formatValue($value)
     {
-        $serialize = \PhalApi\DI()->config->get('app.redis.servers.serialize');
-        $serialize = empty($serialize) ? 'phalapi_serialize:' : $serialize;
-        $result    = is_scalar($value) ? $value : $serialize . @serialize($value);
+        $serialize = $serialize = $this->getSerialize();
+        $result = is_scalar($value) ? $value : $serialize . @serialize($value);
         return $result;
     }
 
     protected function unformatValue($value)
     {
-        $serialize = \PhalApi\DI()->config->get('app.redis.servers.serialize');
-        $serialize = empty($serialize) ? 'phalapi_serialize:' : $serialize;
+        $serialize = $this->getSerialize();
         try {
             $result = 0 === strpos($value, $serialize) ? @unserialize(substr($value, strlen($serialize))) : $value;
         } catch (Exception $e) {
             return false;
         }
         return $result;
+    }
+
+    //-------------------------------------------------------内部方法------------------------------------------------
+
+    protected function getSerialize()
+    {
+        $arr       = \PhalApi\DI()->config->get('app.redis.serialize');
+        $serialize = '';
+        if (!empty($this->dbname)) {
+            $serialize = isset($arr[$this->dbname]) ? $arr[$this->dbname] : '';
+        }
+        $serialize = empty($serialize) ? 'phalapi_serialize:' : $serialize;
+        return $serialize;
     }
 
     //-------------------------------------------------------谨慎使用------------------------------------------------
