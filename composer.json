@@ -15,7 +15,8 @@
       "name": "喵了个咪",
       "email": "wenzhenxi@vip.qq.com",
       "homepage": "http://w-blog.cn",
-      "role": "Developer"
+      "role": "Developer",
+      "update": "2019-04-11"
     }
   ],
   "require": {
