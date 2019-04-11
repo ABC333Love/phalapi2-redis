@@ -51,7 +51,7 @@ extension = redis.so
 ```
 {
     "require": {
-        "abclove/redis": "2.0.*"
+        "abclove/redis": "dev-master"
     }
 }
 ```
@@ -67,23 +67,34 @@ extension = redis.so
      */
     'redis' => array(
         //Redis链接配置项
-        'servers'  => array(
+        'servers'   => array(
             'host'      => '127.0.0.1', //Redis服务器地址
             'port'      => '6379', //Redis端口号
             'prefix'    => 'PhalApi:', //Redis-key前缀
             'auth'      => 'phalapi', //Redis链接密码
-            'serialize' => 'phalapi_serialize:', //序列化前缀
         ),
         // Redis分库对应关系
-        'DB'       => array(
+        'DB'        => array(
             'dev'  => 1,
             'user' => 2,
             'code' => 3,
             'tpl'  => 4,
         ),
-        //使用阻塞式读取队列时的等待时间单位/秒
-        'blocking' => 5,
-    ),
+        // Redis分库对应序列化值前缀
+        'serialize' => array(
+            'dev'  => 'dev_serialize:',
+            'user' => 'user_serialize:',
+            'code' => 'code_serialize:',
+            'tpl'  => 'tpl_serialize:',
+        ),
+
+        // Redis分库对应键名前缀
+        'prefix'    => array(
+            'dev'  => 'dev:',
+            'user' => 'user:',
+            'code' => 'code:',
+            'tpl'  => 'tpl:',
+        ),
 
 ```
 
@@ -96,7 +107,7 @@ extension = redis.so
 // 惰性加载Redis
 \PhalApi\DI()->redis = function () {
     return new \Abclove\Redis\Lite(\PhalApi\DI()->config->get("app.redis.servers"));
-}c
+}
 
 ```
 

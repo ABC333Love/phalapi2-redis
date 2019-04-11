@@ -472,7 +472,7 @@ class Lite extends RedisCache
         } else {
             $db = isset($arr[$name]) ? $arr[$name] : 0;
         }
-        $this->dbname = $name;
+        $this->dbname_old = $name;
         if ($this->db_old != $db) {
             $this->redis->select($db);
             $this->db_old = $db;
@@ -484,7 +484,7 @@ class Lite extends RedisCache
     protected function formatKey($key)
     {
         $arr    = \PhalApi\DI()->config->get('app.redis.prefix');
-        $prefix = isset($arr[$name]) ? $arr[$name] : $this->prefix;
+        $prefix = isset($arr[$this->dbname_old]) ? $arr[$this->dbname_old] : $this->prefix;
         return $prefix . $key;
     }
 
@@ -512,8 +512,8 @@ class Lite extends RedisCache
     {
         $arr       = \PhalApi\DI()->config->get('app.redis.serialize');
         $serialize = '';
-        if (!empty($this->dbname)) {
-            $serialize = isset($arr[$this->dbname]) ? $arr[$this->dbname] : '';
+        if (!empty($this->dbname_old)) {
+            $serialize = isset($arr[$this->dbname_old]) ? $arr[$this->dbname_old] : '';
         }
         $serialize = empty($serialize) ? 'phalapi_serialize:' : $serialize;
         return $serialize;
