@@ -1,6 +1,6 @@
 {
   "name": "abclove/redis",
-  "description": "PhalApi 2.x 扩展类库 - Redis 丰富基础redisCache类功能,更贴切复杂场景下的redis使用。",
+  "description": "PhalApi 2.x 扩展类库 - Redis 增强版",
   "keywords": [
     "abclove",
     "phalapi",
@@ -8,15 +8,15 @@
     "phalapi-redis"
   ],
   "license": "GPL-3.0-or-later",
-  "homepage": "https://www.phalapi.net/",
+  "homepage": "https://github.com/ABC333Love",
   "type": "library",
   "authors": [
     {
-      "name": "喵了个咪",
-      "email": "wenzhenxi@vip.qq.com",
-      "homepage": "http://w-blog.cn",
+      "name": "ABCLove",
+      "email": "abc333love@gmail.com",
+      "homepage": "https://github.com/ABC333Love",
       "role": "Developer",
-      "update": "2019-04-11"
+      "update": "2019-04-26"
     }
   ],
   "require": {

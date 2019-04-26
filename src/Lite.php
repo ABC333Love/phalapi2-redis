@@ -42,7 +42,12 @@ class Lite extends RedisCache
         $this->switchDB($dbname);
         unset($arguments[$last]);
         $arguments = empty($arguments) ? array() : $arguments;
-        return call_user_func_array(array($this, $name), $arguments);
+
+        if (method_exists($this, $name)) {
+            return call_user_func_array(array($this, $name), $arguments);
+        } else {
+            return call_user_func_array(array($this->redis, $name), $arguments);
+        }
     }
 
     //---------------------------------------------------string类型-------------------------------------------------
@@ -158,7 +163,7 @@ class Lite extends RedisCache
     }
 
     /**
-     * 返回原来key中的值，并将value写入key
+     * 返回 key 所储存的字符串值的长度
      */
     protected function get_strlen($key)
     {
@@ -303,6 +308,7 @@ class Lite extends RedisCache
 
     //未实现 lRem lInsert  rpoplpush
     //----------------------------------------------------set类型---------------------------------------------------
+
     //----------------------------------------------------zset类型---------------------------------------------------
     //----------------------------------------------------Hash类型---------------------------------------------------
 
@@ -462,9 +468,9 @@ class Lite extends RedisCache
     }
 
     /**
-     * 内部切换Redis-DB 如果已经在某个DB上则不再切换
+     * 切换Redis-DB 如果已经在某个DB上则不再切换
      */
-    protected function switchDB($name)
+    public function switchDB($name)
     {
         $arr = \PhalApi\DI()->config->get('app.redis.DB');
         if (is_int($name)) {
@@ -481,21 +487,80 @@ class Lite extends RedisCache
 
     //-------------------------------------------------------重写父类方法------------------------------------------------
 
-    protected function formatKey($key)
+    public function set($key, $value, $expire = 600, $dbname = null)
+    {
+        $dbname = empty($dbname) ? $this->dbname_old : $dbname;
+        $this->switchDB($dbname);
+        $this->redis->setex($this->formatKey($key), $expire, $this->formatValue($value));
+    }
+
+    public function get($key, $dbname = null)
+    {
+        $dbname = empty($dbname) ? $this->dbname_old : $dbname;
+        $this->switchDB($dbname);
+        $value = $this->redis->get($this->formatKey($key));
+        return $value !== false ? $this->unformatValue($value) : null;
+    }
+
+    public function delete($key, $dbname = null)
+    {
+        $dbname = empty($dbname) ? $this->dbname_old : $dbname;
+        $this->switchDB($dbname);
+        return $this->redis->delete($this->formatKey($key));
+    }
+
+    public function setnx($key, $value, $dbname = null)
+    {
+        $dbname = empty($dbname) ? $this->dbname_old : $dbname;
+        $this->switchDB($dbname);
+        return $this->redis->setnx($this->formatKey($key), $this->formatValue($value));
+    }
+
+    public function lPush($key, $value, $dbname = null)
+    {
+        $dbname = empty($dbname) ? $this->dbname_old : $dbname;
+        $this->switchDB($dbname);
+        return $this->redis->lPush($this->formatKey($key), $this->formatValue($value));
+    }
+
+    public function rPush($key, $value, $dbname = null)
+    {
+        $dbname = empty($dbname) ? $this->dbname_old : $dbname;
+        $this->switchDB($dbname);
+        return $this->redis->rPush($this->formatKey($key), $this->formatValue($value));
+    }
+
+    public function lPop($key, $dbname = null)
+    {
+        $dbname = empty($dbname) ? $this->dbname_old : $dbname;
+        $this->switchDB($dbname);
+        $value = $this->redis->lPop($this->formatKey($key));
+        return $value !== false ? $this->unformatValue($value) : null;
+    }
+
+    public function rPop($key, $dbname = null)
+    {
+        $dbname = empty($dbname) ? $this->dbname_old : $dbname;
+        $this->switchDB($dbname);
+        $value = $this->redis->rPop($this->formatKey($key));
+        return $value !== false ? $this->unformatValue($value) : null;
+    }
+
+    public function formatKey($key)
     {
         $arr    = \PhalApi\DI()->config->get('app.redis.prefix');
         $prefix = isset($arr[$this->dbname_old]) ? $arr[$this->dbname_old] : $this->prefix;
         return $prefix . $key;
     }
 
-    protected function formatValue($value)
+    public function formatValue($value)
     {
         $serialize = $serialize = $this->getSerialize();
-        $result = is_scalar($value) ? $value : $serialize . @serialize($value);
+        $result    = is_scalar($value) ? $value : $serialize . @serialize($value);
         return $result;
     }
 
-    protected function unformatValue($value)
+    public function unformatValue($value)
     {
         $serialize = $this->getSerialize();
         try {
@@ -510,7 +575,8 @@ class Lite extends RedisCache
 
     protected function getSerialize()
     {
-        $arr       = \PhalApi\DI()->config->get('app.redis.serialize');
+        $arr = \PhalApi\DI()->config->get('app.redis.serialize');
+
         $serialize = '';
         if (!empty($this->dbname_old)) {
             $serialize = isset($arr[$this->dbname_old]) ? $arr[$this->dbname_old] : '';
